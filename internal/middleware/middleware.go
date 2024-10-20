@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"bytes"
-	"html/template"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/rizalta/urlshort/web/components"
 )
 
 type Middlware func(http.Handler) http.Handler
@@ -53,19 +54,14 @@ func ErrorHandler(next http.Handler) http.Handler {
 		wrapped := newWrappedWriter(w)
 		next.ServeHTTP(wrapped, r)
 
-		type errorData struct {
-			Status int
-			Error  string
-		}
-
 		if wrapped.statusCode >= 400 {
-			data := errorData{
+			data := components.ErrorProps{
 				Status: wrapped.statusCode,
 				Error:  wrapped.body.String(),
 			}
 			w.Header().Set("Content-Type", "text/html")
-			tmpl := template.Must(template.ParseFiles("web/templates/error.html"))
-			tmpl.Execute(w, data)
+			components.Error(data).Render(r.Context(), w)
+
 		} else {
 			next.ServeHTTP(w, r)
 		}

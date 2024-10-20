@@ -1,0 +1,52 @@
+package components
+
+templ ShortenURL(url string) {
+	<form class="flex flex-col justify-center items-center gap-6 w-full">
+		<input
+			type="text"
+			name="url"
+			id="shorturl"
+			class="border-none rounded-md shadow-md w-1/3 h-16 text-blue-800 text-2xl py-1 px-2"
+			value={ url }
+			disabled
+		/>
+		<div class="flex flex-row gap-3">
+			<button
+				type="button"
+				class="px-4 py-2 w-36 h-16 text-2xl font-mono text-black bg-white rounded-md hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
+				onclick="copyLink()"
+				id="btn"
+			>
+				Copy
+			</button>
+			<button
+				class="px-4 py-2 w-36 h-16 text-2xl font-mono text-black bg-white rounded-md hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
+				type="button"
+				hx-get="/"
+				hx-target="body"
+			>
+				New
+			</button>
+		</div>
+	</form>
+	<script>
+	const copyLink = () => {
+		const link = document.getElementById("shorturl")
+		const button = document.getElementById("btn")
+		link.select()
+		link.setSelectionRange(0, 99999)
+
+		navigator.clipboard.writeText(link.value)
+			.then(() => {
+				button.textContent = "Copied";
+				setTimeout(() => {
+					button.textContent = "Copy";
+				}, 2000);
+			})
+			.catch(err => {
+				console.error('Failed to copy: ', err);
+				buttonElement.textContent = "Error";
+			})
+	}
+</script>
+}

@@ -1,0 +1,23 @@
+package components
+
+import "fmt"
+
+type ErrorProps struct {
+	Status int
+	Error  string
+}
+
+templ Error(err ErrorProps) {
+	<div class="flex flex-col gap-3 items-center h-full w-full mt-32">
+		<span class="text-9xl text-white font-mono font-bold">{ fmt.Sprintf("%d", err.Status) }</span>
+		<span class="font-mono text-white text-3xl">{ err.Error }</span>
+	</div>
+	<button
+		class="px-4 py-2 w-36 h-16 text-2xl font-mono text-black bg-white rounded-md hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
+		type="button"
+		hx-get="/"
+		hx-target="body"
+	>
+		New
+	</button>
+}

@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"html/template"
 	"net/http"
 	"net/url"
 
 	"github.com/rizalta/urlshort/internal/repo"
 	"github.com/rizalta/urlshort/utils"
+	"github.com/rizalta/urlshort/web/components"
+	"github.com/rizalta/urlshort/web/pages"
 )
 
 type URLHandler struct {
@@ -19,21 +20,13 @@ func NewURLHandler(repo *repo.RedisRepo) *URLHandler {
 
 func (h *URLHandler) AddURL(w http.ResponseWriter, r *http.Request) {
 	URL := r.FormValue("url")
-	parsedURL, err := url.Parse(URL)
-	if err != nil {
-		http.Error(w, "error parsing url", http.StatusBadRequest)
-		return
-	}
-	if parsedURL.Scheme == "" {
-		parsedURL.Scheme = "https"
-	}
-	URL = parsedURL.String()
-	if utils.IsDeadLink(URL) {
-		http.Error(w, "Invalid Link", http.StatusBadRequest)
+	URL = utils.EnforceHTTP(URL)
+	if !utils.IsValidURL(URL) {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
 	shortStr := utils.GenerateRandomString(len(URL)%4 + 4)
-	err = h.repo.AddURL(r.Context(), URL, shortStr)
+	err := h.repo.AddURL(r.Context(), URL, shortStr)
 	if err != nil {
 		http.Error(w, "Invalid Link", http.StatusInternalServerError)
 		return
@@ -45,20 +38,16 @@ func (h *URLHandler) AddURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error joining url", http.StatusInternalServerError)
 	}
 
-	tmpl := template.Must(template.ParseFiles("web/templates/shorten.html"))
-	data := struct {
-		ShortURL string
-	}{
-		ShortURL: shortURL,
+	err = components.ShortenURL(shortURL).Render(r.Context(), w)
+	if err != nil {
+		http.Error(w, "Rendering error", http.StatusInternalServerError)
 	}
-	tmpl.Execute(w, data)
 }
 
 func (h *URLHandler) HomePage(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("web/templates/home.html"))
-	err := tmpl.Execute(w, nil)
+	err := pages.Home().Render(r.Context(), w)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInsufficientStorage)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -67,7 +56,7 @@ func (h *URLHandler) RedirectToURL(w http.ResponseWriter, r *http.Request) {
 	short := r.PathValue("id")
 	url, err := h.repo.GetURL(r.Context(), short)
 	if err != nil {
-		http.Error(w, "Invalid link", http.StatusBadRequest)
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 	http.Redirect(w, r, url, http.StatusFound)

@@ -3,20 +3,30 @@ package utils
 import (
 	"fmt"
 	"math/rand"
+	"net"
 	"net/http"
-	"time"
+	"net/url"
 )
 
-func IsDeadLink(url string) bool {
-	client := &http.Client{
-		Timeout: 4 * time.Second,
+func EnforceHTTP(URL string) string {
+	if len(URL) < 4 {
+		URL = "https://" + URL
+	} else if URL[:4] != "http" {
+		URL = "https://" + URL
 	}
-	resp, err := client.Get(url)
+	return URL
+}
+
+func IsValidURL(URL string) bool {
+	u, err := url.ParseRequestURI(URL)
 	if err != nil {
-		return true
+		return false
 	}
-	defer resp.Body.Close()
-	return resp.StatusCode >= 400
+	_, err = net.LookupHost(u.Host)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func GenerateRandomString(size int) string {
